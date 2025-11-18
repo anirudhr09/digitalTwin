@@ -1476,7 +1476,6 @@ img {
   background: transparent !important;
   line-height: 0;
   font-size: 0;
-  -webkit-font-smoothing: antialiased;
   -webkit-transform: translateZ(0);
   transform: translateZ(0);
   will-change: transform, opacity;
@@ -1499,4 +1498,373 @@ img {
 .memory-lane-root .timeline .line {
   /* optional: subtle blur to reduce aliasing */
   box-shadow: 0 0 0 0 rgba(0,0,0,0);
+}
+
+/* Restore timeline defaults — undo previous render/hardware-layer hacks that broke layout */
+.memory-lane-root .timeline {
+  position: relative;
+  z-index: auto;
+  top: auto;
+  -webkit-transform: none;
+  transform: none;
+  will-change: auto;
+}
+
+.memory-lane-root .timeline .line,
+.memory-lane-root .timeline .line-fill {
+  position: absolute;
+  z-index: auto;
+  pointer-events: auto;
+  -webkit-transform: none;
+  transform: none;
+  will-change: auto;
+  backface-visibility: visible;
+  -webkit-backface-visibility: visible;
+}
+
+/* nodes should be above the line by normal document order, not forced z-indexes */
+.memory-lane-root .node {
+  z-index: auto;
+  -webkit-transform: none;
+  transform: none;
+  backface-visibility: visible;
+}
+
+/* Reset images/track to standard behavior */
+.memory-lane-root .images-wrap,
+.memory-lane-root .images-track {
+  background: transparent;
+  line-height: normal;
+  font-size: inherit;
+  -webkit-transform: none;
+  transform: none;
+  will-change: auto;
+  overflow: visible;
+}
+
+/* Ensure images render as normal inline-block/block elements with no forced layer styles */
+.memory-lane-root .images-track img {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  outline: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  background-clip: border-box;
+  -webkit-backface-visibility: visible;
+  backface-visibility: visible;
+  -webkit-transform: none;
+  transform: none;
+  will-change: auto;
+  image-rendering: auto;
+}
+
+/* ===== Memory Lane / Timeline - restored from journey.html =====
+   Place this block where your previous timeline hacks were added.
+   It restores the original layout, sticky timeline, nodes and image-track behaviour.
+*/
+.memory-lane-root .page {
+  position: relative;
+  z-index: 2;
+  max-width: 1200px; /* fallback if --page-max not present */
+  margin: 0 auto;
+  padding: 72px 24px;
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 40px;
+  align-items: start;
+}
+
+.memory-lane-root .timeline-col {
+  position: relative;
+  height: calc(100vh - 144px);
+}
+
+.memory-lane-root .timeline {
+  position: sticky;
+  top: 72px;
+  height: calc(100vh - 144px);
+  z-index: 2;
+}
+
+/* vertical line (centered at 40% column) */
+.memory-lane-root .timeline .line {
+  position: absolute;
+  left: 40%;
+  transform: translateX(-50%);
+  top: 6%;
+  bottom: 6%;
+  width: 5px; /* use var(--line-width) if defined */
+  background: rgba(255,255,255,0.14);
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+/* filled progress of the line */
+.memory-lane-root .timeline .line-fill {
+  position: absolute;
+  left: 40%;
+  transform: translateX(-50%);
+  top: 6%;
+  width: 5px;
+  background: linear-gradient(180deg, #1f7bff, #1a6bdf);
+  border-radius: 999px;
+  height: 0;
+  transition: height 160ms linear;
+  box-shadow: 0 6px 20px rgba(31,123,255,0.14);
+  pointer-events: none;
+}
+
+/* timeline nodes */
+.memory-lane-root .node {
+  position: absolute;
+  left: 40%;
+  transform: translate(-50%,-50%);
+  width: 56px;   /* use var(--node-size) if defined */
+  height: 56px;
+  border-radius: 50%;
+  background: white;
+  color: #023047;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  cursor: pointer;
+  border: 3px solid rgba(255,255,255,0.12);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.36);
+  transition: transform .28s ease, box-shadow .28s ease, background .28s ease;
+  z-index: 4; /* above line and images */
+}
+.memory-lane-root .node:hover { transform: translate(-50%,-50%) scale(1.06); }
+.memory-lane-root .node .short { display: block; font-size: .9rem; }
+.memory-lane-root .node .label {
+  display: none;
+  position: absolute;
+  left: calc(100% + 12px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(6,25,55,0.72);
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.95);
+  font-size: .95rem;
+}
+.memory-lane-root .node.active {
+  background: #1f7bff;
+  color: white;
+  transform: translate(-50%,-50%) scale(1.18);
+  border-color: rgba(255,255,255,0.06);
+  box-shadow: 0 18px 40px rgba(31,123,255,0.2);
+}
+.memory-lane-root .node.active .label { display: block; }
+
+/* section and image track */
+.memory-lane-root main { padding: 0; }
+.memory-lane-root .timeline-section { min-height: calc(100vh - 160px); display: flex; align-items: center; padding: 24px 0; }
+
+.memory-lane-root .section-inner {
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  padding: 28px;
+  border-radius: 14px;
+  display: grid;
+  grid-template-columns: 1.45fr 1fr;
+  gap: 26px;
+  align-items: center;
+  backdrop-filter: blur(6px);
+}
+
+/* media / image track styles */
+.memory-lane-root .media { border-radius: 12px; overflow: hidden; box-shadow: 0 12px 40px rgba(2,6,12,0.5); }
+.memory-lane-root .images-wrap { position: relative; height: 360px; overflow: hidden; background: transparent; }
+.memory-lane-root .images-track {
+  display: flex;
+  gap: 14px;
+  will-change: transform;
+  align-items: center;
+  height: 100%;
+}
+.memory-lane-root .images-track img {
+  width: 460px;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 10px;
+  flex-shrink: 0;
+  display: block;
+  outline: none;
+  border: 0;
+  background-color: transparent;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* active state for track */
+.memory-lane-root .images-track { opacity: .95; transition: filter 260ms ease, opacity 260ms ease; filter: grayscale(10%); }
+.memory-lane-root .images-track.active { filter: grayscale(0%); opacity: 1; }
+
+/* responsive fallback (mobile) - follows journey.html */
+@media (max-width: 980px) {
+  .memory-lane-root .page { grid-template-columns: 1fr; padding: 36px 16px; }
+  .memory-lane-root .timeline-col { order: -1; height: auto; }
+  .memory-lane-root .timeline { position: relative; top: 0; height: auto; display: flex; gap: 12px; padding-bottom: 18px; }
+  .memory-lane-root .timeline .line, .memory-lane-root .timeline .line-fill { display: none; }
+  .memory-lane-root .node { position: static; transform: none; width: 52px; height: 52px; margin-right: 8px; }
+  .memory-lane-root .node .label { display: none; }
+  .memory-lane-root .section-inner { grid-template-columns: 1fr; gap: 18px; padding: 18px; }
+  .memory-lane-root .images-wrap { height: 240px; }
+  .memory-lane-root .images-track img { width: 100%; height: 100%; }
+}
+
+/* small utility: ensure timeline elements don't create sub-pixel seam artifacts */
+.memory-lane-root .timeline,
+.memory-lane-root .images-wrap,
+.memory-lane-root .images-track,
+.memory-lane-root .images-track img {
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  will-change: transform, opacity;
+}
+
+.memory-lane-root .writeup {
+  position: relative;
+  padding-left: 20px;            /* space for accent bar */
+  max-width: 64ch;              /* improve readable line length */
+  color: rgba(255,255,255,0.95);
+  font-family: var(--font-sans, 'Poppins', system-ui, sans-serif);
+  font-weight: 500;
+  line-height: 1.7;
+  z-index: 1;
+}
+
+/* vertical accent bar */
+.memory-lane-root .writeup::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 14px;
+  bottom: 14px;
+  width: 6px;
+  border-radius: 6px;
+  background: linear-gradient(180deg, rgba(31,123,255,0.95), rgba(26,107,223,0.85));
+  box-shadow: 0 8px 30px rgba(31,123,255,0.12);
+  opacity: 0.95;
+  pointer-events: none;
+}
+
+/* heading */
+.memory-lane-root .writeup h3 {
+  margin: 0 0 10px 0;
+  font-size: 1.85rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--first-color);
+  text-shadow: 0 8px 20px rgba(2,6,23,0.18);
+}
+
+/* paragraph body with gentle drop-cap */
+.memory-lane-root .writeup p {
+  margin: 0;
+  font-size: 1.04rem;
+  line-height: 1.7;
+  color: rgba(255,255,255,0.94);
+}
+
+/* decorative drop-cap on first paragraph for visual interest */
+.memory-lane-root .writeup p::first-letter {
+  float: left;
+  font-size: 3rem;
+  line-height: 1;
+  margin-right: 12px;
+  font-weight: 900;
+  color: var(--first-color);
+  font-family: var(--font-serif);
+  text-shadow: 0 6px 18px rgba(2,6,23,0.12);
+}
+
+/* small plaque-like highlights */
+.memory-lane-root .writeup .sub.muted {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 6px 10px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.88);
+  font-weight: 700;
+  font-size: 0.95rem;
+  box-shadow: 0 8px 22px rgba(2,6,23,0.08);
+}
+
+/* responsive tweaks */
+@media (max-width: 980px) {
+  .memory-lane-root .writeup {
+    padding-left: 12px;
+    max-width: none;
+  }
+  .memory-lane-root .writeup::before { display: none; } /* hide accent on small screens */
+  .memory-lane-root .writeup h3 { font-size: 1.45rem; }
+  .memory-lane-root .writeup p::first-letter { font-size: 2.2rem; margin-right: 8px; }
+}
+
+/* Reduce brightness of center backdrop, increase blur and add dark veil for readable text */
+.memory-lane-root .section-inner::before {
+  content: "";
+  position: absolute;
+  left: 30%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 60%;
+  max-width: 980px;
+  height: 88%;
+  border-radius: 14px;
+  pointer-events: none;
+  z-index: 0;
+  /* dark veil + soft color glow, heavier blur to mute bright backgrounds */
+  background: linear-gradient(180deg, rgba(6,10,20,0.45), rgba(6,10,20,0.35));
+  /* blur underlying page content (preferred) */
+  -webkit-backdrop-filter: blur(30px);
+  backdrop-filter: blur(30px);
+  /* make the veil 30% visible */
+  opacity: 0.4;
+  /* remove any heavy filter applied before */
+  filter: none !important;
+}
+
+/* keep content above backdrop */
+.memory-lane-root .section-inner > * { position: relative; z-index: 1; }
+
+/* stronger readable text: pure white + subtle soft shadow */
+.memory-lane-root .writeup {
+  color: #ffffff;
+  text-shadow: 0 6px 18px rgba(0,0,0,0.45);
+}
+
+/* remove decorative drop-cap: make first-letter normal */
+.memory-lane-root .writeup p::first-letter {
+  float: none;
+  font-size: inherit;
+  line-height: inherit;
+  margin-right: 0;
+  font-weight: 500;
+  color: inherit;
+  font-family: inherit;
+  text-shadow: none;
+  text-transform: none;
+}
+
+/* slightly lift heading contrast and weight for hierarchy */
+.memory-lane-root .writeup h3 {
+  color: #ffffff;
+  font-weight: 800;
+  text-shadow: 0 8px 22px rgba(0,0,0,0.45);
+}
+
+/* responsive: reduce blur on small screens for performance and clarity */
+@media (max-width: 980px) {
+  .memory-lane-root .section-inner::before {
+    filter: blur(10px);
+    width: 100%;
+    height: 110%;
+    opacity: 0.9;
+  }
 }
