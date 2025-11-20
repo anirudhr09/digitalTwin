@@ -804,7 +804,6 @@ function renderCategories(){
       <div class="cat-icon">${c.split(' ').map(s=>s[0]).join('').slice(0,2).toUpperCase()}</div>
       <div style="text-align:left">
         <div style="font-weight:800">${c}</div>
-        <div class="cat-meta">View ${c} items</div>
       </div>
     `;
     btn.addEventListener('click', () => {
@@ -840,22 +839,21 @@ window.addEventListener('beforeunload', () => clearIntervals());
 
 init();
 
-/* Wall of Fame lightbox (robust) */
-(function initWallOfFame(){
-  function ready(fn){ if(document.readyState !== 'loading') return fn(); document.addEventListener('DOMContentLoaded', fn); }
+/* ===== Replace existing Wall of Fame lightbox with a more robust handler ===== */
+(function () {
+  function ready(fn){ if (document.readyState !== 'loading') return fn(); document.addEventListener('DOMContentLoaded', fn); }
 
-  ready(function(){
+  ready(function () {
     const grid = document.getElementById('wallGrid');
     let modal = document.getElementById('wofModal');
+    if (!grid || !modal) {
+      console.warn('Wall grid or modal not found:', { grid: !!grid, modal: !!modal });
+      return;
+    }
 
-    if(!grid) return;
-
-    // If modal exists inside a transformed parent it can break fixed positioning.
-    // Move modal to document.body to ensure it's centered over viewport.
-    if(modal && modal.parentElement !== document.body) document.body.appendChild(modal);
-    // if still not found, bail
+    // Move modal to document.body to avoid transform/stacking context problems
+    if (modal.parentElement !== document.body) document.body.appendChild(modal);
     modal = document.getElementById('wofModal');
-    if(!modal) return;
 
     const imgEl = modal.querySelector('.wof-img');
     const captionEl = modal.querySelector('.wof-caption');
@@ -863,53 +861,109 @@ init();
     const backdrop = modal.querySelector('.wof-backdrop');
     let lastActive = null;
 
+    function extractUrlFromStyle(styleStr){
+      if(!styleStr) return null;
+      const m = String(styleStr).match(/url\((?:'|")?(.*?)(?:'|")?\)/);
+      return m ? m[1] : null;
+    }
+
+    function getImageSrc(fig){
+      if(!fig) return null;
+      // 1) <img> inside figure
+      const img = fig.querySelector('img');
+      if(img){
+        return img.dataset.full || img.getAttribute('src') || null;
+      }
+      // 2) data-full on figure
+      if(fig.dataset.full) return fig.dataset.full;
+      // 3) inline style background or data-bg
+      const ds = fig.dataset.bg || fig.getAttribute('style') || '';
+      const url = extractUrlFromStyle(ds);
+      if(url) return url;
+      // nothing found
+      return null;
+    }
+
+    function showModalLoading(state){
+      if(state) modal.classList.add('loading'); else modal.classList.remove('loading');
+      // ensure image visibility class removed while loading
+      imgEl.classList.remove('loaded');
+    }
+
     function openModal(src, alt, caption){
+      if(!src){
+        console.warn('openModal called without src; caption:', caption);
+        return;
+      }
       lastActive = document.activeElement;
-      // set src first so image can start loading while modal animates
-      imgEl.src = src || '';
-      imgEl.alt = alt || '';
-      captionEl.textContent = caption || '';
+      // show modal and backdrop immediately (so user sees the overlay)
       modal.setAttribute('aria-hidden','false');
-      modal.classList.add('open');
+      modal.classList.add('open','show');
       document.body.style.overflow = 'hidden';
-      // once image loads we ensure it's visible (no extra cropping)
-      imgEl.onload = () => { /* no-op: CSS contains max-width / max-height to contain image */ };
-      // focus close button for keyboard users
-      if (closeBtn) closeBtn.focus();
+      captionEl.textContent = caption || '';
+      imgEl.alt = alt || '';
+
+      // show spinner/loading state
+      showModalLoading(true);
+
+      // Preload image and handle success / error
+      const pre = new Image();
+      pre.onload = function(){
+        imgEl.src = pre.src;
+        // reveal image
+        requestAnimationFrame(()=> {
+          imgEl.classList.add('loaded');
+          showModalLoading(false);
+        });
+        // focus close for accessibility
+        if(closeBtn) setTimeout(()=> closeBtn.focus(), 60);
+      };
+      pre.onerror = function(){
+        showModalLoading(false);
+        captionEl.textContent = caption ? caption + ' (image failed to load)' : 'Image failed to load';
+        console.error('Failed to preload image:', src);
+      };
+      // start loading (use absolute / relative src as provided)
+      pre.src = src;
     }
 
     function closeModal(){
       modal.setAttribute('aria-hidden','true');
-      modal.classList.remove('open');
-      // clear src after animation to free memory
-      setTimeout(()=>{ try{ imgEl.src = ''; }catch(e){} }, 260);
+      modal.classList.remove('open','show');
+      // clear image after close animation
+      setTimeout(()=> { try{ imgEl.src = ''; imgEl.classList.remove('loaded'); } catch(e){} }, 220);
       document.body.style.overflow = '';
-      // restore focus
       try{ lastActive && lastActive.focus(); } catch(e){}
     }
 
-    // delegate open events
+    // Click delegation to open modal
     grid.addEventListener('click', (e) => {
       const fig = e.target.closest('.wall-item');
       if(!fig) return;
-      const img = fig.querySelector('img');
-      openModal(img?.currentSrc || img?.src, img?.alt, fig.dataset.caption || fig.querySelector('figcaption')?.textContent || '');
+      const src = getImageSrc(fig);
+      const alt = (fig.querySelector('img') && fig.querySelector('img').alt) || fig.dataset.caption || '';
+      const caption = fig.dataset.caption || fig.querySelector('figcaption')?.textContent || '';
+      openModal(src, alt, caption);
     });
 
-    // keyboard open (Enter / Space) for focused .wall-item
+    // Keyboard open (Enter / Space)
     grid.addEventListener('keydown', (e) => {
-      if(!['Enter',' '].includes(e.key)) return;
-      const fig = document.activeElement && (document.activeElement.closest ? document.activeElement.closest('.wall-item') : null);
+      if(e.key !== 'Enter' && e.key !== ' ') return;
+      const fig = document.activeElement && document.activeElement.classList && document.activeElement.classList.contains('wall-item') ? document.activeElement : null;
       if(!fig) return;
       e.preventDefault();
-      const img = fig.querySelector('img');
-      openModal(img?.currentSrc || img?.src, img?.alt, fig.dataset.caption || fig.querySelector('figcaption')?.textContent || '');
+      const src = getImageSrc(fig);
+      const caption = fig.dataset.caption || fig.querySelector('figcaption')?.textContent || '';
+      openModal(src, (fig.querySelector('img') && fig.querySelector('img').alt) || '', caption);
     });
 
-    // close handlers
-    closeBtn && closeBtn.addEventListener('click', closeModal);
-    backdrop && backdrop.addEventListener('click', closeModal);
+    // Close handlers
+    if(closeBtn) closeBtn.addEventListener('click', closeModal);
+    if(backdrop) backdrop.addEventListener('click', closeModal);
     modal.addEventListener('click', (e) => { if(e.target === modal) closeModal(); });
     document.addEventListener('keydown', (e) => { if(e.key === 'Escape' && modal.classList.contains('open')) closeModal(); });
+
+    // small dev-info if something goes wrong
+    try { grid.setAttribute('data-wof-ready','true'); } catch(e){}
   });
 })();
