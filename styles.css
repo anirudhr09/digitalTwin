@@ -1078,6 +1078,222 @@ img {
   line-height: 1.5;
 }
 
+/* ===== ACHIEVEMENTS SECTION (clean, modern, readable) =====
+   - Scoped to .ach-section / .cards-area / .cards-grid / .achievement-card
+   - Uses existing CSS variables (--first-color, --font-sans, --muted, etc.)
+   - Keeps image alignment/track untouched; only styles achievement UI
+*/
+.ach-section {
+  display: grid;
+  grid-template-columns: minmax(220px, 320px) 1fr;
+  gap: 24px;
+  align-items: start;
+  width: 100%;
+  margin: 0 auto;
+  padding: 8px 0 32px;
+}
+
+/* LEFT: categories panel */
+.ach-section .categories {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: stretch;
+}
+.ach-section .ach-section-label {
+  font-weight: 700;
+  color: var(--muted, #6b7280);
+  font-size: .95rem;
+  margin-bottom: 6px;
+}
+.cat-list { display: flex; flex-direction: column; gap: 12px; }
+.cat-btn {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 12px 14px;
+  height: 64px;
+  border-radius: 12px;
+  background: linear-gradient(180deg,#ffffff,#f8fbff);
+  border: 1px solid rgba(37,99,235,0.06);
+  cursor: pointer;
+  transition: transform .16s ease, box-shadow .18s ease, background .18s ease;
+  font-weight: 800;
+  color: var(--first-color);
+  text-align: left;
+}
+.cat-btn:hover { transform: translateX(6px); box-shadow: 0 12px 34px rgba(37,99,235,0.06); }
+.cat-icon {
+  width:52px; height:52px; border-radius:10px; display:grid; place-items:center;
+  background: linear-gradient(180deg,#ffffff,#f3f8ff);
+  color: var(--first-color); font-weight:800; font-family: var(--font-sans);
+}
+.cat-meta { font-size:12px; color: var(--muted, #6b7280); margin-top:6px; font-weight:700; }
+
+/* active category */
+.cat-btn.active {
+  color: #fff;
+  background: linear-gradient(90deg,var(--first-color), #3b82f6);
+  border-color: transparent;
+  box-shadow: 0 22px 48px rgba(37,99,235,0.14), 0 0 36px rgba(59,130,246,0.06);
+  transform: translateX(8px);
+}
+.cat-btn.active .cat-icon { background: rgba(255,255,255,0.08); color:#fff; box-shadow:none; }
+
+/* RIGHT: content + toolbar */
+.content { display:flex; flex-direction:column; gap:12px; }
+.toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.toolbar .title, .ach-section .ach-section-title {
+  font-family: var(--font-sans);
+  font-weight: 800;
+  color: #07122b;
+  font-size: 1.15rem;
+}
+.glow-btn {
+  background: linear-gradient(90deg,#fff, rgba(255,255,255,0.98));
+  border: 1px solid rgba(37,99,235,0.12);
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-weight: 700;
+  color: var(--first-color);
+  cursor: pointer;
+  box-shadow: 0 8px 28px rgba(37,99,235,0.06);
+}
+.glow-btn:hover { transform: translateY(-3px); box-shadow: 0 18px 40px rgba(37,99,235,0.12); }
+
+/* cards area / grid */
+.cards-area {
+  height: calc(56vh - 72px);
+  background: transparent;
+  border-radius: 12px;
+  padding: 10px;
+  overflow: auto;
+  scroll-behavior: smooth;
+}
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+
+/* achievement card */
+.achievement-card,
+.achievements .card {
+  position: relative;
+  border-radius: 14px;
+  padding: 18px;
+  min-height: 150px;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(250,253,255,0.98));
+  border: 1.2px solid rgba(37,99,235,0.06);
+  box-shadow: 0 12px 30px rgba(9,20,44,0.04);
+  transition: transform .18s cubic-bezier(.2,.9,.3,1), box-shadow .18s ease, border-color .18s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.achievement-card:hover { transform: translateY(-8px); box-shadow: 0 34px 70px rgba(37,99,235,0.10); }
+
+/* optional background slide & overlay (keeps text readable) */
+.bg-slides { position: absolute; inset: 0; z-index: 0; border-radius: inherit; overflow: hidden; pointer-events: none; }
+.bg-slide { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0; transform: scale(1.02); transition: opacity .45s, transform .45s; filter: saturate(.98) contrast(.98); }
+.bg-slide.active { opacity: 1; transform: scale(1); }
+.card-overlay { position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(180deg, rgba(255,255,255,0.66), rgba(255,255,255,0.44)); }
+
+/* content above overlay */
+.card-content, .achievement-card__content { position: relative; z-index: 2; display:flex; flex-direction:column; gap:8px; }
+.achievement-card__icon { width:54px; height:54px; border-radius:12px; display:grid; place-items:center; background: linear-gradient(180deg,#fff,#f4f8ff); color:var(--first-color); font-size:1.25rem; box-shadow: inset 0 6px 18px rgba(37,99,235,0.03); }
+.achievement-card__title { font-size: 1.125rem; font-weight: 800; margin: 0; color: #07122b; }
+.achievement-card__meta { font-size: .88rem; color: var(--muted, #6b7280); font-weight:700; }
+.achievement-card__desc { font-size: .95rem; color: #374151; line-height: 1.45; font-weight:600; margin-top:6px; }
+
+/* tags and CTA */
+.achievement-card .tags { margin-top: auto; display:flex; gap:8px; flex-wrap:wrap; align-items:center; z-index:2; }
+.tag { background: linear-gradient(180deg,#eef6ff,#f7fbff); color: var(--first-color); padding:6px 10px; border-radius:999px; font-weight:700; font-size:12px; border:1px solid rgba(37,99,235,0.06); }
+.achievements .card .cta, .achievement-card .cta { margin-left:auto; align-self:flex-end; padding:8px 12px; border-radius:10px; border:0; background: linear-gradient(90deg, rgba(37,99,235,0.08), rgba(59,130,246,0.04)); color: var(--first-color); font-weight:800; cursor:pointer; }
+.achievements .card .cta:hover { transform: translateY(-3px); background: linear-gradient(90deg,var(--first-color), #3b82f6); color: #fff; box-shadow: 0 18px 40px rgba(37,99,235,0.12); }
+
+
+/* ===== Achievements: match Projects section sizing & remove blue focus line on category buttons ===== */
+
+/* Make achievements panel use same max width / centering as .projects .wrap */
+.achievements.section {
+  /* keep section padding from .section, but center inner panel */
+  display: block;
+}
+.achievements .ach-section {
+  width: min(1100px, 96vw);
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px 0; /* same vertical rhythm as projects.wrap */
+  box-sizing: border-box;
+}
+
+/* Ensure cards area aligns with centered column */
+.achievements .cards-area,
+.achievements .cards-grid {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0; /* cards are already inside centered container */
+}
+
+/* Remove default browser blue focus ring on category buttons
+   and replace with an accessible subtle ring (non-intrusive). */
+.cat-btn:focus,
+.cat-btn:focus-visible {
+  outline: none;                    /* remove default blue outline */
+  box-shadow: 0 6px 20px rgba(37,99,235,0.10), 0 0 0 4px rgba(59,130,246,0.06); /* subtle glow */
+  border-color: rgba(37,99,235,0.10);
+}
+
+/* Keep strong accessible focus for keyboard but neutralize bright blue */
+.cat-btn:active,
+.cat-btn:focus {
+  transform: translateX(6px);
+}
+
+/* If any global focus rule above added a persistent outline, specifically override it */
+.cat-btn[aria-selected="true"] {
+  /* active state handled separately; avoid extra outlines */
+  outline: none !important;
+}
+
+/* reduce emphasis of .cat-btn::after or similar (defensive) */
+.cat-btn::after {
+  display: none;
+}
+
+/* Small responsive tweak to keep layout identical to projects on narrow screens */
+@media (max-width: 1024px) {
+  .achievements .ach-section { width: 100%; padding: 20px 16px; }
+  .achievements .cards-area { height: 48vh; }
+}
+
+/* focus accessibility */
+.cat-btn:focus, .cat-btn:focus-visible, .achievement-card:focus, .achievement-card:focus-visible, .card .cta:focus-visible {
+  outline: 3px solid rgba(59,130,246,0.16);
+  outline-offset: 4px;
+  border-radius: 12px;
+}
+
+/* scrollbar style for cards area */
+.cards-area::-webkit-scrollbar { width:10px; height:10px; }
+.cards-area::-webkit-scrollbar-thumb { background: linear-gradient(180deg,#cfe0ff,#a9c8ff); border-radius:999px; border:2px solid #f8fbff; }
+
+/* responsive adjustments */
+@media (max-width: 1024px) {
+  .ach-section { grid-template-columns: 1fr; }
+  .cards-area { height: 48vh; }
+  .cat-list { flex-direction: row; gap:12px; overflow:auto; }
+  .cat-btn { min-width:150px; border-radius:999px; height:56px; padding:8px 12px; justify-content:center; }
+  .cat-icon { display:none; }
+}
+@media (max-width: 520px) {
+  .achievement-card { padding:14px; min-height:140px; }
+  .achievement-card__icon { width:48px; height:48px; }
+}
+
 /* === Enhancements: Parallax, Accessibility, 3D, Gradients === */
 
 /* Gradient text */
@@ -1675,7 +1891,7 @@ img {
 }
 
 /* media / image track styles */
-.memory-lane-root .media { border-radius: 12px; overflow: hidden; box-shadow: 0 12px 40px rgba(2,6,12,0.5); }
+.memory-lane-root .media { border-radius: 12px; overflow: hidden; box-shadow: 0 12px 40px rgba(2,6,23,0.5); }
 .memory-lane-root .images-wrap { position: relative; height: 360px; overflow: hidden; background: transparent; }
 .memory-lane-root .images-track {
   display: flex;
@@ -1867,4 +2083,286 @@ img {
     height: 110%;
     opacity: 0.9;
   }
+}
+
+/* ===== WALL OF FAME — refined final styles (landscape frames + working lightbox) =====
+   - Landscape tiles (16:9) with realistic outer frame + white mat
+   - Works with <figure class="wall-item"><img> or with figure background-image
+   - Ensures figures are clickable; modal expands image with description shown below
+*/
+
+.wall-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 1rem;
+  box-sizing: border-box;
+}
+
+/* grid sized for landscape cards */
+.wall-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+  align-items: start;
+  width: 100%;
+  pointer-events: auto;
+  z-index: 3;
+}
+
+/* outer frame (wood/metal look) */
+.wall-item {
+  position: relative;
+  display: block;
+  cursor: pointer;
+  border-radius: 16px;
+  padding: 12px;                             /* mat spacing inside outer frame */
+  background: linear-gradient(180deg,#efe6d8,#fbf7f2); /* frame tone */
+  border: 10px solid #6f4a2b;                /* outer frame color */
+  box-shadow:
+    0 18px 40px rgba(2,6,23,0.12),
+    inset 0 2px 0 rgba(255,255,255,0.85);
+  transition: transform .18s ease, box-shadow .18s ease;
+  pointer-events: auto;
+  z-index: 4;
+  overflow: visible;
+}
+
+/* white mat inside the frame */
+.wall-item .mat,
+.wall-item::before { /* supports both markup with .mat and background-image on figure */
+  display: block;
+  width: 100%;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: inset 0 1px 0 rgba(0,0,0,0.03);
+  pointer-events: none;
+}
+
+/* Photo element (img or a .photo div inside mat) */
+.wall-item img,
+.wall-item .photo {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  display: block;
+  border-radius: 6px;
+  border: 6px solid #ffffff;                 /* space between photo and mat */
+  box-shadow: 0 10px 30px rgba(2,6,23,0.12);
+  pointer-events: none;                      /* clicks handled by figure */
+}
+
+/* If user places background-image on the figure directly, show inside mat visual */
+.wall-item[data-bg] {
+  background-image: linear-gradient(180deg,#efe6d8,#fbf7f2);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+}
+/* prefer explicit image inside mat; if no img provided, style a pseudo photo area */
+.wall-item:not(:has(img)) .mat {
+  min-height: 0;
+}
+.wall-item:not(:has(img))::after {
+  content: "";
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: center / cover no-repeat var(--wall-bg, transparent);
+  border-radius: 6px;
+  border: 6px solid #fff;
+  box-shadow: 0 10px 30px rgba(2,6,23,0.12);
+  pointer-events: none;
+}
+
+/* caption below the mat/photo */
+.wall-item figcaption {
+  margin-top: 12px;
+  padding: 0 2px;
+  font-weight: 700;
+  font-size: .95rem;
+  color: var(--second-color);
+  line-height: 1.25;
+  pointer-events: none;
+}
+
+/* hover / focus */
+.wall-item:hover,
+.wall-item:focus {
+  transform: translateY(-8px) scale(1.01);
+  box-shadow: 0 36px 90px rgba(2,6,23,0.16);
+  outline: none;
+}
+.wall-item:focus-visible {
+  box-shadow: 0 36px 90px rgba(2,6,23,0.16), 0 0 0 6px rgba(59,130,246,0.08);
+  border-color: rgba(59,130,246,0.06);
+  transform: translateY(-8px) scale(1.01);
+}
+
+/* mobile adjustments */
+@media (max-width:520px) {
+  .wall-grid { gap: 12px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+  .wall-item { padding: 8px; border-width: 8px; border-radius: 12px; }
+  .wall-item img, .wall-item .photo { aspect-ratio: 4/3; border-radius: 6px; }
+}
+
+/* ===== Lightbox / Modal (expand photo + caption below) ===== */
+
+/* container; JS should toggle aria-hidden or .show on this element */
+.wof-modal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 20000;
+  pointer-events: none;
+}
+.wof-modal[aria-hidden="false"],
+.wof-modal.show,
+.wof-modal.open {
+  display: flex;
+  pointer-events: auto;
+}
+
+/* backdrop */
+.wof-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(6,10,20,0.7);
+  backdrop-filter: blur(6px) saturate(.95);
+  z-index: 20010;
+  opacity: 0;
+  transition: opacity .18s ease;
+  pointer-events: auto;
+}
+.wof-modal[aria-hidden="false"] .wof-backdrop,
+.wof-modal.show .wof-backdrop { opacity: 1; }
+
+/* centered card that holds media + caption */
+.wof-card {
+  width: min(1100px, 92vw);
+  max-height: 88vh;
+  background: linear-gradient(180deg,#fff,#fbfdff);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 40px 110px rgba(2,6,23,0.6);
+  display: grid;
+  grid-template-rows: 1fr auto;
+  z-index: 20000;
+  pointer-events: auto;
+  transform: translateY(6px) scale(.995);
+  opacity: 0;
+  transition: transform .18s ease, opacity .18s ease;
+}
+.wof-modal[aria-hidden="false"] .wof-card,
+.wof-modal.show .wof-card {
+  transform: none;
+  opacity: 1;
+}
+
+/* close button */
+.wof-close {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  z-index: 20030;
+  border: none;
+  background: rgba(9,20,44,0.06);
+  width:44px; height:44px;
+  border-radius:10px;
+  cursor:pointer;
+  display:grid; place-items:center;
+  pointer-events: auto;
+}
+.wof-close:hover { background: rgba(9,20,44,0.10); transform: translateY(-2px); }
+.wof-close:focus-visible { outline: 3px solid rgba(59,130,246,0.12); outline-offset: 3px; }
+
+/* media area */
+.wof-media {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: linear-gradient(180deg, rgba(250,250,252,0.95), rgba(245,247,250,0.98));
+  min-height: 48vh;
+}
+
+.wof-img {
+  width: 100%;
+  max-width: 1080px;
+  height: auto;
+  max-height: calc(88vh - 200px);
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 18px 40px rgba(2,6,23,0.12);
+  display: block;
+  margin: 0 auto;
+}
+
+/* ensure modal caption wraps and is scrollable if long */
+.wof-caption {
+  padding: 14px 18px;
+  background: transparent;
+  border-top: 1px solid rgba(9,20,40,0.04);
+  font-weight: 700;
+  color: var(--second-color);
+  text-align: left;
+  pointer-events: auto;
+  max-height: 22vh;
+  overflow: auto;
+  white-space: normal;
+}
+
+
+/* keyboard hint */
+.wof-hint { position: absolute; left: 18px; bottom: 18px; font-size: .85rem; color: rgba(9,20,40,0.56); pointer-events: none; }
+
+/* ensure modal sits above any other overlays */
+.wof-modal, .wof-backdrop, .wof-card { contain: layout paint size; }
+
+/* Defensive: make sure nothing (veils) blocks wall clicks */
+.memory-lane-root .section-inner::before,
+.section-with-collage .collage-background { pointer-events: none !important; }
+
+/* small utility: ensure figures remain clickable */
+.wall-item, .wall-item * { -webkit-tap-highlight-color: transparent; pointer-events: auto; }
+
+/* Lightbox: show a spinner while image loads and fade image in when ready */
+.wof-card.loading {
+  position: relative;
+}
+.wof-card.loading::after{
+  content: "";
+  position: absolute;
+  inset: 0;
+  display: block;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.02));
+  pointer-events: none;
+}
+.wof-card.loading .wof-media {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* spinner */
+.wof-card.loading .wof-media::after{
+  content: "";
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 5px solid rgba(255,255,255,0.18);
+  border-top-color: rgba(37,99,235,0.9);
+  animation: wofSpin 880ms linear infinite;
+  z-index: 2;
+}
+@keyframes wofSpin { to { transform: rotate(360deg); } }
+
+/* fade-in image when loaded */
+.wof-img { opacity: 0; transition: opacity .22s ease; }
+.wof-img.loaded { opacity: 1; }
+
+/* make sure modal and card are always above everything */
+.wof-modal, .wof-backdrop, .wof-card {
+  z-index: 99999 !important;
+  pointer-events: auto !important;
 }
