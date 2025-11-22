@@ -705,7 +705,6 @@ function renderCategories(){
     btn.setAttribute('role','tab');
     btn.setAttribute('aria-selected', c === activeCategory ? 'true' : 'false');
     btn.innerHTML = `
-      <div class="cat-icon">${c.split(' ').map(s=>s[0]).join('').slice(0,2).toUpperCase()}</div>
       <div style="text-align:left">
         <div style="font-weight:800">${c}</div>
         <div class="cat-meta">View ${c} items</div>
@@ -801,7 +800,6 @@ function renderCategories(){
     btn.setAttribute('role','tab');
     btn.setAttribute('aria-selected', c === activeCategory ? 'true' : 'false');
     btn.innerHTML = `
-      <div class="cat-icon">${c.split(' ').map(s=>s[0]).join('').slice(0,2).toUpperCase()}</div>
       <div style="text-align:left">
         <div style="font-weight:800">${c}</div>
       </div>
@@ -851,10 +849,11 @@ init();
       return;
     }
 
-    // Move modal to document.body to avoid transform/stacking context problems
+    // ensure modal is in <body> to avoid transformed ancestor issues
     if (modal.parentElement !== document.body) document.body.appendChild(modal);
     modal = document.getElementById('wofModal');
 
+    const card = modal.querySelector('.wof-card');
     const imgEl = modal.querySelector('.wof-img');
     const captionEl = modal.querySelector('.wof-caption');
     const closeBtn = modal.querySelector('.wof-close');
@@ -869,24 +868,21 @@ init();
 
     function getImageSrc(fig){
       if(!fig) return null;
-      // 1) <img> inside figure
       const img = fig.querySelector('img');
       if(img){
-        return img.dataset.full || img.getAttribute('src') || null;
+        return img.dataset.full || img.currentSrc || img.getAttribute('src') || null;
       }
-      // 2) data-full on figure
       if(fig.dataset.full) return fig.dataset.full;
-      // 3) inline style background or data-bg
       const ds = fig.dataset.bg || fig.getAttribute('style') || '';
       const url = extractUrlFromStyle(ds);
       if(url) return url;
-      // nothing found
       return null;
     }
 
-    function showModalLoading(state){
-      if(state) modal.classList.add('loading'); else modal.classList.remove('loading');
-      // ensure image visibility class removed while loading
+    function setLoading(state){
+      if(!card) return;
+      if(state) card.classList.add('loading'); else card.classList.remove('loading');
+      // always hide image until load event
       imgEl.classList.remove('loaded');
     }
 
@@ -896,47 +892,52 @@ init();
         return;
       }
       lastActive = document.activeElement;
-      // show modal and backdrop immediately (so user sees the overlay)
+
+      // show overlay & card immediately
       modal.setAttribute('aria-hidden','false');
       modal.classList.add('open','show');
       document.body.style.overflow = 'hidden';
       captionEl.textContent = caption || '';
       imgEl.alt = alt || '';
 
-      // show spinner/loading state
-      showModalLoading(true);
+      setLoading(true);
 
-      // Preload image and handle success / error
-      const pre = new Image();
-      pre.onload = function(){
-        imgEl.src = pre.src;
-        // reveal image
-        requestAnimationFrame(()=> {
-          imgEl.classList.add('loaded');
-          showModalLoading(false);
-        });
-        // focus close for accessibility
-        if(closeBtn) setTimeout(()=> closeBtn.focus(), 60);
+      // attach one-time load/error handlers on actual modal <img>
+      const onLoad = () => {
+        imgEl.classList.add('loaded');
+        setLoading(false);
+        cleanup();
+        if(closeBtn) closeBtn.focus();
       };
-      pre.onerror = function(){
-        showModalLoading(false);
-        captionEl.textContent = caption ? caption + ' (image failed to load)' : 'Image failed to load';
-        console.error('Failed to preload image:', src);
+      const onError = () => {
+        setLoading(false);
+        captionEl.textContent = (caption || '') + ' — image failed to load';
+        console.error('wof: image failed to load', src);
+        cleanup();
       };
-      // start loading (use absolute / relative src as provided)
-      pre.src = src;
+      function cleanup(){
+        imgEl.removeEventListener('load', onLoad);
+        imgEl.removeEventListener('error', onError);
+      }
+
+      imgEl.addEventListener('load', onLoad);
+      imgEl.addEventListener('error', onError);
+
+      // set src (starts loading). using the img element ensures onload/onerror fire reliably.
+      imgEl.src = src;
     }
 
     function closeModal(){
       modal.setAttribute('aria-hidden','true');
       modal.classList.remove('open','show');
-      // clear image after close animation
+      // clear src after a short delay to allow CSS animation
       setTimeout(()=> { try{ imgEl.src = ''; imgEl.classList.remove('loaded'); } catch(e){} }, 220);
       document.body.style.overflow = '';
       try{ lastActive && lastActive.focus(); } catch(e){}
+      setLoading(false);
     }
 
-    // Click delegation to open modal
+    // Click delegation
     grid.addEventListener('click', (e) => {
       const fig = e.target.closest('.wall-item');
       if(!fig) return;
@@ -946,7 +947,7 @@ init();
       openModal(src, alt, caption);
     });
 
-    // Keyboard open (Enter / Space)
+    // keyboard open (Enter/Space) on focused .wall-item
     grid.addEventListener('keydown', (e) => {
       if(e.key !== 'Enter' && e.key !== ' ') return;
       const fig = document.activeElement && document.activeElement.classList && document.activeElement.classList.contains('wall-item') ? document.activeElement : null;
@@ -957,13 +958,173 @@ init();
       openModal(src, (fig.querySelector('img') && fig.querySelector('img').alt) || '', caption);
     });
 
-    // Close handlers
+    // close handlers
     if(closeBtn) closeBtn.addEventListener('click', closeModal);
     if(backdrop) backdrop.addEventListener('click', closeModal);
     modal.addEventListener('click', (e) => { if(e.target === modal) closeModal(); });
     document.addEventListener('keydown', (e) => { if(e.key === 'Escape' && modal.classList.contains('open')) closeModal(); });
 
-    // small dev-info if something goes wrong
+    // dev flag
     try { grid.setAttribute('data-wof-ready','true'); } catch(e){}
+  });
+})();
+
+/* ===== Theme toggle (persistent + prefers-color-scheme) ===== */
+(function themeInit(){
+  // run after DOM is ready so elements may exist anywhere in the page
+  function onReady(fn){ if (document.readyState !== 'loading') return fn(); document.addEventListener('DOMContentLoaded', fn); }
+
+  onReady(function(){
+    const root = document.documentElement;
+    const key = 'site-theme';
+
+    // helpers
+    function safeGet(key){ try{ return localStorage.getItem(key); }catch(e){ return null; } }
+    function safeSet(key, val){ try{ localStorage.setItem(key, val); }catch(e){} }
+
+    // read either explicit site-theme OR accessibility panel prefs (legacy 'prefs' JSON)
+    let stored = safeGet(key);
+    if(!stored){
+      try{
+        const prefs = JSON.parse(safeGet('prefs') || '{}');
+        if(prefs && prefs.theme) stored = prefs.theme;
+      }catch(e){}
+    }
+
+    // apply theme
+    function apply(theme){
+      if(theme === 'dark'){
+        root.setAttribute('data-theme','dark');
+      } else {
+        root.removeAttribute('data-theme');
+      }
+      // reflect into accessibility panel if present
+      const themeSel = document.getElementById('theme-select');
+      if(themeSel) themeSel.value = theme === 'dark' ? 'dark' : 'light';
+      // reflect visual toggle if present
+      const btn = document.getElementById('theme-toggle');
+      const icon = document.getElementById('theme-icon');
+      if(btn) btn.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
+      if(icon) icon.textContent = theme === 'dark' ? '☀️' : '🌙';
+    }
+
+    // initialize from stored -> prefers -> default light
+    if(stored) apply(stored);
+    else if(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) apply('dark');
+    else apply('light');
+
+    // toggle function
+    function toggleTheme(){
+      const cur = root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+      const next = cur === 'dark' ? 'light' : 'dark';
+      safeSet(key, next);
+      apply(next);
+      // also update accessibility 'prefs' so both systems remain in sync
+      try{
+        const p = JSON.parse(safeGet('prefs') || '{}');
+        p.theme = next;
+        safeSet('prefs', JSON.stringify(p));
+      }catch(e){}
+    }
+
+    // delegated click handler so toggle works even if button is rendered later
+    document.addEventListener('click', (e) => {
+      const t = e.target.closest && e.target.closest('#theme-toggle');
+      if(!t) return;
+      e.preventDefault();
+      toggleTheme();
+    });
+
+    // also support keyboard activation (Space / Enter) on the button if it exists
+    document.addEventListener('keydown', (e) => {
+      const activeToggle = document.activeElement && document.activeElement.id === 'theme-toggle';
+      if(!activeToggle) return;
+      if(e.key === ' ' || e.key === 'Enter'){
+        e.preventDefault();
+        toggleTheme();
+      }
+    });
+
+    // keep in sync with accessibility panel selector if present
+    const themeSelEl = document.getElementById('theme-select');
+    if(themeSelEl){
+      themeSelEl.addEventListener('change', () => {
+        const v = themeSelEl.value === 'dark' ? 'dark' : 'light';
+        safeSet(key, v);
+        apply(v);
+        try{
+          const p = JSON.parse(safeGet('prefs') || '{}');
+          p.theme = v;
+          safeSet('prefs', JSON.stringify(p));
+        }catch(e){}
+      });
+    }
+
+    // respond to system preference changes only if user hasn't set explicit site-theme
+    if(window.matchMedia){
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (ev) => {
+        if(!safeGet(key)){ apply(ev.matches ? 'dark' : 'light'); }
+      });
+    }
+  });
+})();
+
+/* ===== Achievements: reset cards-area when switching category ===== */
+(function achResetOnCategory(){
+  function onReady(fn){ if(document.readyState !== 'loading') return fn(); document.addEventListener('DOMContentLoaded', fn); }
+
+  onReady(function(){
+    const containerSelector = '.cards-area';
+    const btnSelector = '.cat-btn';
+
+    function focusFirstCard(cardsArea){
+      if(!cardsArea) return;
+      const first = cardsArea.querySelector('.achievement-card, .cards-grid > *');
+      if(!first) return;
+      // make focusable, focus without scrolling, then restore tabindex
+      const prev = first.getAttribute('tabindex');
+      first.setAttribute('tabindex','-1');
+      try { first.focus({preventScroll: true}); } catch(e){ first.focus(); }
+      if(prev === null) first.removeAttribute('tabindex'); else first.setAttribute('tabindex', prev);
+    }
+
+    function resetCardsArea(){
+      const cardsArea = document.querySelector(containerSelector);
+      if(!cardsArea) return;
+      // instantly jump to top (use smooth if you prefer)
+      try { cardsArea.scrollTo({ top: 0, behavior: 'auto' }); }
+      catch(e){ cardsArea.scrollTop = 0; }
+      focusFirstCard(cardsArea);
+    }
+
+    // delegate clicks on category buttons
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest && e.target.closest(btnSelector);
+      if(!btn) return;
+      // wait a tick so any category-change logic can run (show/hide DOM)
+      setTimeout(resetCardsArea, 60);
+    });
+
+    // keyboard activation (Enter / Space) on focused category button
+    document.addEventListener('keydown', (e) => {
+      if(e.key !== 'Enter' && e.key !== ' ') return;
+      const active = document.activeElement;
+      if(!active || !active.matches(btnSelector)) return;
+      // allow other handlers to run then reset
+      setTimeout(resetCardsArea, 60);
+    });
+
+    // optional: if your category switching is done by adding/removing an 'active' class,
+    // observe the container for changes and reset when children change.
+    const cardsArea = document.querySelector(containerSelector);
+    if(cardsArea){
+      const mo = new MutationObserver((mutList) => {
+        // if children or subtree changed, ensure scroll reset on category swap
+        resetCardsArea();
+      });
+      mo.observe(cardsArea, { childList: true, subtree: false });
+      // do not hold reference forever if page removes the section
+      // (you can disconnect later if needed)
+    }
   });
 })();
