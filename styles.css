@@ -29,6 +29,61 @@
   --z-fixed: 100;
 }
 
+/* THEME VARIABLES (light defaults already in :root above) */
+/* Add near the top (after :root) so overrides work reliably */
+:root {
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --text: var(--second-color);
+  --muted: #6b7280;
+  --card-bg: #ffffff;
+  --header-bg: #ffffff;
+  --footer-bg: var(--second-color);
+}
+
+/* Dark theme override — applied when [data-theme="dark"] on <html> or <body> */
+[data-theme="dark"] {
+  --bg: #0b1220;
+  --surface: #0f1724;
+  --text: #e6eef8;
+  --muted: rgba(230,238,248,0.72);
+  --card-bg: #0b1226;
+  --header-bg: rgba(6,10,20,0.6);
+  --footer-bg: #07122b;
+  /* you can nudge the primary color if desired (keeps recognizability) */
+  --first-color: hsl(var(--hue-color), 90%, 64%);
+  --second-color: #e6eef8;
+}
+
+/* Adopt variables in key places (replace fixed values where present) */
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* header/footer and panels */
+.l-header { background-color: var(--header-bg); box-shadow: 0 1px 4px rgba(0,0,0,0.12); }
+.a11y-panel { background: var(--surface); color: var(--text); }
+.footer { background-color: var(--footer-bg); color: #fff; }
+
+/* cards & surfaces */
+.achievement-card,
+.projects .card,
+.card-inspiration,
+.wall-item,
+.wof-card,
+.page-content,
+.about__img .card { background: var(--card-bg); color: var(--text); }
+
+/* small text-muted usage */
+.muted, .nav__link, .achievement-card__meta { color: var(--muted); }
+
+/* ensure buttons keep contrast in dark mode — example for primary .button */
+.button {
+  background-color: var(--first-color);
+  color: #fff;
+}
+
 @media screen and (min-width: 968px) {
   :root {
     --big-font-size: 3.5rem;
@@ -133,8 +188,8 @@ img {
   top: 0;
   left: 0;
   z-index: var(--z-fixed);
-  background-color: #fff;
-  box-shadow: 0 1px 4px rgba(146, 161, 176, 0.15);
+  background-color: var(--header-bg); /* changed from #fff -> theme var */
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12);
 }
 
 /*===== NAV =====*/
@@ -165,7 +220,7 @@ img {
 
 .nav__link {
   position: relative;
-  color: #fff;
+  color: var(--second-color);
 }
 
 .nav__link:hover {
@@ -2357,12 +2412,151 @@ img {
 }
 @keyframes wofSpin { to { transform: rotate(360deg); } }
 
-/* fade-in image when loaded */
+/* defensive: spinner should show when the card is loading; support modal.loading too */
+.wof-modal.loading .wof-card,
+.wof-card.loading {
+  /* keep the existing loading styles (spinner selector already targets .wof-card.loading) */
+  pointer-events: auto;
+}
+
+/* ensure image fades in when the .loaded class is added */
 .wof-img { opacity: 0; transition: opacity .22s ease; }
 .wof-img.loaded { opacity: 1; }
 
-/* make sure modal and card are always above everything */
-.wof-modal, .wof-backdrop, .wof-card {
-  z-index: 99999 !important;
-  pointer-events: auto !important;
+
+/* ===== Dark-mode fixes: ensure readable text in Achievements & Wall of Fame ===== */
+[data-theme="dark"] {
+  /* fallback text vars if not already set */
+  --site-text: var(--text, #e6eef8);
+  --site-muted: var(--muted, rgba(230,238,248,0.72));
+  --tag-bg: rgba(255,255,255,0.04);
+  --mat-bg: rgba(255,255,255,0.02);
+}
+
+/* Achievement cards */
+[data-theme="dark"] .achievement-card,
+[data-theme="dark"] .achievement-card .card-content,
+[data-theme="dark"] .achievement-card .title,
+[data-theme="dark"] .achievement-card .meta,
+[data-theme="dark"] .achievement-card .desc,
+[data-theme="dark"] .achievement-card .tags,
+[data-theme="dark"] .achievement-card .cta {
+  color: var(--site-text) !important;
+  background: transparent !important;
+}
+
+/* Tag / pill contrast */
+[data-theme="dark"] .achievement-card .tag,
+[data-theme="dark"] .tag {
+  background: var(--tag-bg) !important;
+  color: var(--site-text) !important;
+  border-color: rgba(255,255,255,0.06) !important;
+}
+
+/* Wall of Fame figure text and mat */
+[data-theme="dark"] .wall-item,
+[data-theme="dark"] .wall-item .mat,
+[data-theme="dark"] .wall-item figcaption,
+[data-theme="dark"] .wall-item .hover-caption {
+  color: var(--site-text) !important;
+  background-color: transparent !important;
+}
+
+/* make sure small / muted text remains visible */
+[data-theme="dark"] .achievement-card .meta,
+[data-theme="dark"] .wall-item figcaption {
+  color: var(--site-muted) !important;
+  opacity: 0.95;
+}
+
+/* Lighten modal caption and controls */
+[data-theme="dark"] .wof-card,
+[data-theme="dark"] .wof-caption,
+[data-theme="dark"] .wof-close {
+  color: var(--site-text) !important;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.02)) !important;
+}
+
+/* Mat inside the frame: give subtle contrast in dark */
+[data-theme="dark"] .wall-item .mat {
+  background: var(--mat-bg) !important;
+}
+
+/* Ensure figcaption links/buttons remain readable */
+[data-theme="dark"] .wall-item figcaption a,
+[data-theme="dark"] .achievement-card .cta {
+  color: var(--site-text) !important;
+}
+
+/* Defensive: if any selectors set color with higher specificity, force with important on critical areas */
+[data-theme="dark"] .achievement-card *:not(.tag),
+[data-theme="dark"] .wall-item *:not(.tag) {
+  color: inherit !important;
+}
+
+/* ===== Dark-mode: ensure Wall of Fame descriptions are readable ===== */
+[data-theme="dark"] {
+  --wof-caption-bg: rgba(255,255,255,0.02);
+  --wof-caption-border: rgba(255,255,255,0.04);
+}
+
+/* modal caption / description */
+[data-theme="dark"] .wof-caption,
+[data-theme="dark"] .wof-caption * {
+  color: var(--site-text) !important;
+  background: transparent !important;
+}
+
+/* slightly lift media area contrast so image feels framed on dark */
+[data-theme="dark"] .wof-media {
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.02)) !important;
+}
+
+/* caption border and subtle background for better separation */
+[data-theme="dark"] .wof-caption {
+  border-top-color: var(--wof-caption-border) !important;
+  background: var(--wof-caption-bg) !important;
+  color: var(--site-text) !important;
+}
+
+/* modal small meta / muted text */
+[data-theme="dark"] .wof-caption .meta,
+[data-theme="dark"] .wof-caption small {
+  color: var(--site-muted) !important;
+  opacity: 0.95;
+}
+
+/* thumbnail captions / mat captions */
+[data-theme="dark"] .wall-item figcaption,
+[data-theme="dark"] .wall-item .mat,
+[data-theme="dark"] .wall-item .hover-caption {
+  color: var(--site-text) !important;
+  background: transparent !important;
+}
+
+/* hover caption background for readability */
+[data-theme="dark"] .wall-item .hover-caption {
+  background: linear-gradient(180deg, rgba(0,0,0,0.45), rgba(0,0,0,0.28)) !important;
+  color: var(--site-text) !important;
+}
+
+/* ensure any CTA/link inside figcaption is visible */
+[data-theme="dark"] .wall-item figcaption a,
+[data-theme="dark"] .wof-caption a {
+  color: var(--first-color) !important;
+  text-decoration: underline;
+}
+
+/* defensive: force inherit for nested text inside wall-item / modal if some rule is overriding */
+[data-theme="dark"] .wall-item *:not(.tag),
+[data-theme="dark"] .wof-caption *:not(.tag) {
+  color: inherit !important;
+}
+
+/* Force wall-of-fame figure captions to stay black even in dark theme */
+html[data-theme="dark"] #wall-of-fame .wall-item figcaption,
+[data-theme="dark"] #wall-of-fame .wall-item figcaption {
+  color: #000 !important;
+  text-shadow: none !important;
+  opacity: 1 !important;
 }
