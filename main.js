@@ -1010,7 +1010,6 @@ init();
 
     // initialize from stored -> prefers -> default light
     if(stored) apply(stored);
-    else if(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) apply('dark');
     else apply('light');
 
     // toggle function
@@ -1128,3 +1127,4 @@ init();
     }
   });
 })();
+
