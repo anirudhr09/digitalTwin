@@ -355,7 +355,13 @@ if (typeof ScrollReveal === 'function') {
     if(!lastTime) lastTime = t;
     const dt = t - lastTime;
     lastTime = t;
+    const mobileLane = window.matchMedia('(max-width: 767px)').matches;
     activeTracks.forEach(track => {
+      if (mobileLane) {
+        track._pos = 0;
+        track.style.transform = 'translateX(0px)';
+        return;
+      }
       if(!track._width) track._width = Math.max(1, track.scrollWidth / 2);
       track._pos = (track._pos + track._speed * dt) % track._width;
       track.style.transform = `translateX(-${track._pos}px)`;
@@ -818,7 +824,8 @@ function renderCategories(){
 
 /* keyboard nav for categories */
 document.addEventListener('keydown', (e) => {
-  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)){
+  const focusedCategory = document.activeElement && document.activeElement.classList.contains('cat-btn');
+  if(focusedCategory && ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)){
     const idx = categories.indexOf(activeCategory);
     if(e.key === 'ArrowUp' || e.key === 'ArrowLeft'){
       e.preventDefault();
@@ -1126,5 +1133,40 @@ init();
       // (you can disconnect later if needed)
     }
   });
+})();
+
+
+/* ===== Final mobile behavior fixes: Memory Lane + Achievements ===== */
+(() => {
+  const lane = document.querySelector('.memory-lane-root');
+  if (lane) {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const refreshLane = () => {
+      lane.querySelectorAll('.images-track').forEach(track => {
+        if (mq.matches) {
+          track._pos = 0;
+          track.style.transform = 'translateX(0px)';
+        }
+      });
+      if (lane._memoryLane && typeof lane._memoryLane.refresh === 'function') {
+        requestAnimationFrame(() => lane._memoryLane.refresh());
+      }
+    };
+    window.addEventListener('orientationchange', () => setTimeout(refreshLane, 180));
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', refreshLane);
+    mq.addEventListener?.('change', refreshLane);
+    refreshLane();
+  }
+
+  const categoryList = document.getElementById('categoryList');
+  if (categoryList) {
+    categoryList.addEventListener('click', (e) => {
+      const btn = e.target.closest('.cat-btn');
+      if (!btn || window.innerWidth > 767) return;
+      requestAnimationFrame(() => btn.scrollIntoView({
+        behavior: 'smooth', block: 'nearest', inline: 'center'
+      }));
+    });
+  }
 })();
 
