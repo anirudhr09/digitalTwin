@@ -2829,3 +2829,156 @@ body {
     padding: 14px;
   }
 }
+
+
+/* =========================================================
+   FINAL MOBILE FIXES — Memory Lane + Achievements
+   Appended overrides; desktop layout remains unchanged.
+   ========================================================= */
+@media screen and (max-width: 767px) {
+  /* MEMORY LANE */
+  .memory-lane-root { width:100%; max-width:100vw; overflow:hidden; }
+  .memory-lane-root .page { display:block; width:100%; padding:24px 12px 40px; }
+  .memory-lane-root .timeline-col { width:100%; max-width:100%; overflow:hidden; margin-bottom:18px; }
+  .memory-lane-root .timeline {
+    position:relative !important; top:auto !important; left:auto !important;
+    width:100%; height:auto !important; min-height:0;
+    display:flex; flex-wrap:nowrap; align-items:center; gap:8px;
+    overflow-x:auto; overflow-y:hidden; padding:4px 2px 12px;
+    scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+  .memory-lane-root .timeline::-webkit-scrollbar { display:none; }
+  .memory-lane-root .timeline .line,
+  .memory-lane-root .timeline .line-fill { display:none !important; }
+  .memory-lane-root .node {
+    position:relative !important; top:auto !important; left:auto !important;
+    transform:none !important; flex:0 0 44px; width:44px; height:44px;
+    margin:0 !important; scroll-snap-align:center; z-index:1;
+  }
+  .memory-lane-root .node .label { display:none !important; }
+  .memory-lane-root .timeline-section {
+    min-height:0 !important; width:100%; padding:12px 0 24px;
+    display:block;
+  }
+  .memory-lane-root .section-inner {
+    width:100%; max-width:100%; grid-template-columns:minmax(0,1fr) !important;
+    gap:16px; padding:14px; overflow:hidden;
+  }
+  .memory-lane-root .media,
+  .memory-lane-root .images-wrap { width:100%; max-width:100%; }
+  .memory-lane-root .images-wrap { height:clamp(200px,58vw,280px) !important; overflow:hidden !important; }
+  .memory-lane-root .images-track {
+    height:100%; gap:10px; flex-wrap:nowrap; will-change:auto;
+  }
+  .memory-lane-root .images-track img {
+    flex:0 0 calc(100vw - 52px) !important;
+    width:calc(100vw - 52px) !important; max-width:520px !important;
+    height:100% !important; object-fit:cover;
+  }
+  .memory-lane-root .writeup { width:100%; max-width:100%; padding-left:12px; overflow-wrap:anywhere; }
+  .memory-lane-root .hero { min-height:0; }
+
+  /* ACHIEVEMENTS */
+  .achievements .ach-section, .ach-section {
+    display:block !important; width:100% !important; max-width:100% !important;
+    padding:18px 12px 28px !important;
+  }
+  .ach-section .categories { width:100%; min-width:0; margin-bottom:16px; }
+  .ach-section .cat-list, .cat-list {
+    display:flex; flex-direction:row !important; flex-wrap:nowrap;
+    gap:8px; width:100%; overflow-x:auto; overflow-y:hidden;
+    padding:2px 2px 10px; scroll-snap-type:x proximity;
+    -webkit-overflow-scrolling:touch; scrollbar-width:none;
+  }
+  .ach-section .cat-list::-webkit-scrollbar, .cat-list::-webkit-scrollbar { display:none; }
+  .ach-section .cat-btn, .cat-btn {
+    flex:0 0 auto; min-width:max-content !important; width:auto;
+    height:46px !important; padding:9px 14px !important;
+    border-radius:999px; transform:none !important; scroll-snap-align:start;
+    white-space:nowrap;
+  }
+  .cat-btn:hover, .cat-btn:focus, .cat-btn:active, .cat-btn.active { transform:none !important; }
+  .ach-section .content, .achievements .content { width:100%; min-width:0; }
+  .ach-section .toolbar { flex-wrap:wrap; align-items:flex-start; }
+  .achievements .cards-area, .cards-area {
+    width:100%; height:auto !important; max-height:none !important;
+    overflow:visible !important; padding:4px 0 !important;
+  }
+  .achievements .cards-grid, .cards-grid {
+    grid-template-columns:minmax(0,1fr) !important; gap:14px; width:100%;
+  }
+  .achievement-card {
+    width:100%; min-width:0; min-height:0 !important; padding:16px !important;
+    overflow:hidden; transform:none !important;
+  }
+  .achievement-card:hover { transform:none !important; }
+  .achievement-card .card-content { min-width:0; }
+  .achievement-card .title, .achievement-card .desc { overflow-wrap:anywhere; }
+  .achievement-card .tags { gap:6px; }
+  .achievement-card .cta { min-height:44px; }
+}
+@media screen and (max-width: 380px) {
+  .memory-lane-root .page { padding-inline:8px; }
+  .memory-lane-root .section-inner { padding:10px; }
+  .memory-lane-root .images-track img {
+    flex-basis:calc(100vw - 36px) !important; width:calc(100vw - 36px) !important;
+  }
+  .achievements .ach-section, .ach-section { padding-inline:8px !important; }
+  .achievement-card { padding:13px !important; }
+}
+
+/* ===== MOBILE HOME HERO: PHOTO ABOVE TEXT ===== */
+@media screen and (max-width: 575px) {
+  .home {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch;
+    padding-top: 2rem;
+    row-gap: 1.5rem;
+  }
+
+  /* Move the photo above the text */
+  .home__img {
+    position: relative !important;
+    order: -1;
+    right: auto !important;
+    bottom: auto !important;
+
+    width: min(72vw, 280px) !important;
+    max-width: 280px !important;
+    margin: 0 auto 1rem !important;
+
+    display: block;
+  }
+
+  .home__img svg,
+  .home__blob {
+    width: 100% !important;
+    height: auto !important;
+    display: block;
+  }
+
+  /* Text comes after the photo */
+  .home__data {
+    order: 1;
+    width: 100%;
+  }
+
+  .home__title {
+    margin-bottom: 2rem;
+  }
+
+  /* Social icons below the main content instead of beside the photo */
+  .home__social {
+    order: 2;
+    flex-direction: row !important;
+    align-items: center;
+    gap: 1.5rem;
+    margin-top: 0.5rem;
+  }
+
+  .home__social-icon {
+    margin: 0 !important;
+  }
+}
