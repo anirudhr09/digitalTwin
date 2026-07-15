@@ -2560,3 +2560,272 @@ html[data-theme="dark"] #wall-of-fame .wall-item figcaption,
   text-shadow: none !important;
   opacity: 1 !important;
 }
+/* =========================================================
+   MOBILE RESPONSIVENESS FIXES
+   Appended overrides only — existing desktop styles unchanged
+   ========================================================= */
+
+/* Global horizontal-overflow safety net */
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Make the home hero SVG/image scale with its container */
+.home__img svg,
+.home__blob {
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  display: block;
+}
+
+/* Prevent fixed physical-unit media from overflowing its container */
+.skills__img,
+.work__img,
+.proj__img {
+  max-width: 100%;
+}
+
+.skills__img img,
+.work__img img,
+.proj__img img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Fix Unicorn Studio inline 1440px × 900px sizing on smaller screens.
+   !important is required to override the element's inline width/height. */
+@media screen and (max-width: 1439px) {
+  .unicorn-fullscreen {
+    width: 100% !important;
+    max-width: 100vw !important;
+    height: 100vh !important;
+    min-height: 100svh;
+    overflow: hidden;
+  }
+}
+
+/* General phone/tablet fixes */
+@media screen and (max-width: 767px) {
+  /* Home hero: cover the previously undefined 321px–575px range too */
+  .home__img {
+    width: clamp(200px, 58vw, 300px);
+    max-width: 72vw;
+    right: 0;
+  }
+
+  .home__img svg,
+  .home__blob {
+    width: 100%;
+    height: auto;
+  }
+
+  /* Replace fixed cm sizing with responsive dimensions on small screens */
+  .skills__img {
+    width: min(9cm, 100%);
+    height: auto;
+    aspect-ratio: 1 / 1;
+    margin-inline: auto;
+  }
+
+  .work__img {
+    width: min(8cm, 100%);
+    height: auto;
+    max-height: 80vh;
+    margin-inline: auto;
+  }
+
+  .proj__img {
+    width: min(8cm, 100%);
+    height: auto;
+    aspect-ratio: 1 / 1;
+    margin-inline: auto;
+  }
+
+  .work__img img,
+  .proj__img img,
+  .skills__img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* Contact form: full width and no iOS Safari input zoom */
+  .contact__container {
+    width: 100%;
+  }
+
+  .contact__form {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .contact__input,
+  .contact__button {
+    font-size: 16px;
+  }
+
+  /* Projects carousel: keep cards and controls inside the viewport */
+  .projects .wrap {
+    width: 100%;
+    max-width: 100vw;
+    padding-inline: 12px;
+  }
+
+  .projects .stage {
+    width: 100%;
+  }
+
+  .projects .nav {
+    width: 44px;
+  }
+
+  .projects .nav.left {
+    left: 0;
+  }
+
+  .projects .nav.right {
+    right: 0;
+  }
+
+  /* Achievements: allow content to determine height more naturally */
+  .achievements .cards-area,
+  .cards-area {
+    height: auto;
+    max-height: 65vh;
+    padding: 8px;
+  }
+
+  .achievements .ach-section {
+    padding-inline: 12px;
+  }
+
+  /* Accessibility panel: never exceed the available viewport width */
+  .a11y-panel {
+    width: min(300px, calc(100vw - 32px));
+    max-width: calc(100vw - 32px);
+  }
+}
+
+/* Narrow phones */
+@media screen and (max-width: 575px) {
+  .home {
+    row-gap: 2rem;
+  }
+
+  .home__img {
+    width: clamp(190px, 58vw, 260px);
+    max-width: 68vw;
+    right: 0;
+  }
+
+  .contact__form {
+    padding-inline: 0;
+  }
+
+  /* Wall of Fame / lightbox: fit comfortably inside the viewport */
+  .wof-modal,
+  .wall-of-fame-modal,
+  .lightbox,
+  .modal {
+    max-width: 100vw;
+    max-height: 100dvh;
+  }
+
+  .wof-card,
+  .wall-item {
+    max-width: 100%;
+  }
+}
+
+/* Extra-tight carousel and modal spacing */
+@media screen and (max-width: 480px) {
+  :root {
+    --card-w: calc(100vw - 56px);
+  }
+
+  .projects .wrap {
+    padding-inline: 8px;
+  }
+
+  .projects .stage {
+    overflow: hidden;
+  }
+
+  .projects .slide {
+    max-width: calc(100vw - 56px);
+  }
+
+  .projects .nav {
+    width: 36px;
+  }
+
+  .projects .nav svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .projects .nav.left {
+    left: 0;
+  }
+
+  .projects .nav.right {
+    right: 0;
+  }
+
+  .projects .card .top {
+    padding: 36px 18px;
+  }
+
+  .projects .bottom {
+    padding: 18px;
+  }
+
+  .projects .title {
+    font-size: 26px;
+  }
+
+  .achievements .cards-area,
+  .cards-area {
+    max-height: 60vh;
+  }
+
+  .achievement-card {
+    padding: 12px;
+  }
+
+  .wof-modal,
+  .wall-of-fame-modal,
+  .lightbox,
+  .modal {
+    padding: 12px;
+  }
+}
+
+/* Very small phones */
+@media screen and (max-width: 360px) {
+  .a11y-panel {
+    right: 8px;
+    width: calc(100vw - 16px);
+    max-width: calc(100vw - 16px);
+    padding: 0.875rem;
+  }
+
+  .a11y-toggle {
+    right: 8px;
+  }
+
+  .home__img {
+    max-width: 64vw;
+  }
+
+  .projects .card .top {
+    padding-inline: 14px;
+  }
+
+  .projects .bottom {
+    padding: 14px;
+  }
+}
