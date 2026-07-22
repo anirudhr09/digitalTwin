@@ -61,26 +61,89 @@ if (typeof ScrollReveal === 'function') {
   const prev = document.querySelector('.nav.left');
   const next = document.querySelector('.nav.right');
   const dotsEl = document.querySelector('.dots');
+  const mobileDotsQuery = window.matchMedia('(max-width: 767px)');
 
   const total = slides.length;
   let index = 0;
   let spacing = 360;
+  let mobileDotsMode = null;
+  let dots = [];
 
-  // create dots
-  const dots = slides.map((_, i) => {
-    const d = document.createElement('button');
-    d.className = 'dot' + (i ? '' : ' active');
-    dotsEl.appendChild(d);
-    d.addEventListener('click', () => goTo(i));
-    return d;
-  });
+  function buildDots() {
+    if (!dotsEl) return;
+
+    const isMobile = mobileDotsQuery.matches;
+    if (mobileDotsMode === isMobile && dots.length) return;
+
+    mobileDotsMode = isMobile;
+    dotsEl.innerHTML = '';
+    dots = [];
+
+    const dotTotal = isMobile ? Math.min(5, total) : total;
+    const slots = isMobile
+      ? Array.from({ length: dotTotal }, (_, i) => i - Math.floor(dotTotal / 2))
+      : Array.from({ length: dotTotal }, (_, i) => i);
+
+    dotsEl.classList.toggle('is-mobile', isMobile);
+    dotsEl.style.setProperty('--dot-count', String(dotTotal));
+
+    slots.forEach((slot, i) => {
+      const d = document.createElement('button');
+      d.type = 'button';
+      d.className = 'dot';
+      d.dataset.slot = String(slot);
+      d.addEventListener('click', () => {
+        if (isMobile) {
+          goTo(index + slot);
+        } else {
+          goTo(i);
+        }
+      });
+      dotsEl.appendChild(d);
+      dots.push(d);
+    });
+  }
+
+  function syncDots() {
+    if (!dots.length) return;
+
+    if (mobileDotsMode) {
+      const centered = Math.floor(dots.length / 2);
+      dots.forEach((dot, slotIndex) => {
+        const offset = slotIndex - centered;
+        const slideIndex = mod(index + offset, total);
+        dot.classList.toggle('active', offset === 0);
+        dot.setAttribute('aria-label', `Go to slide ${slideIndex + 1}`);
+        dot.style.setProperty('--dot-x', `${offset * 24}px`);
+        dot.style.setProperty('--dot-rot', `${offset * 8}deg`);
+        dot.style.setProperty('--dot-scale', offset === 0 ? '1.35' : String(1 - Math.min(Math.abs(offset) * 0.08, 0.18)));
+        dot.style.setProperty('--dot-opacity', offset === 0 ? '1' : String(0.65 - Math.min(Math.abs(offset) * 0.08, 0.18)));
+      });
+      return;
+    }
+
+    dots.forEach((dot, i) => {
+      dot.classList.toggle('active', i === index);
+      dot.setAttribute('aria-label', `Go to slide ${i + 1}`);
+      dot.style.removeProperty('--dot-x');
+      dot.style.removeProperty('--dot-rot');
+      dot.style.removeProperty('--dot-scale');
+      dot.style.removeProperty('--dot-opacity');
+    });
+  }
 
   function recalc() {
+    buildDots();
     const cardW = stage.clientWidth * 0.62;
     spacing = Math.max(240, Math.min(420, cardW * 0.55));
     render(0);
   }
   window.addEventListener('resize', recalc);
+  if (typeof mobileDotsQuery.addEventListener === 'function') {
+    mobileDotsQuery.addEventListener('change', recalc);
+  } else if (typeof mobileDotsQuery.addListener === 'function') {
+    mobileDotsQuery.addListener(recalc);
+  }
   recalc();
 
   function mod(n, m) {
@@ -106,7 +169,7 @@ if (typeof ScrollReveal === 'function') {
       el.style.opacity = opac;
       el.style.zIndex = String(1000 - Math.round(abs * 10));
     });
-    dots.forEach((d, i) => d.classList.toggle('active', i === index));
+    syncDots();
   }
 
   function goTo(i) {
@@ -355,13 +418,7 @@ if (typeof ScrollReveal === 'function') {
     if(!lastTime) lastTime = t;
     const dt = t - lastTime;
     lastTime = t;
-    const mobileLane = window.matchMedia('(max-width: 767px)').matches;
     activeTracks.forEach(track => {
-      if (mobileLane) {
-        track._pos = 0;
-        track.style.transform = 'translateX(0px)';
-        return;
-      }
       if(!track._width) track._width = Math.max(1, track.scrollWidth / 2);
       track._pos = (track._pos + track._speed * dt) % track._width;
       track.style.transform = `translateX(-${track._pos}px)`;
@@ -384,25 +441,32 @@ if (typeof ScrollReveal === 'function') {
   function updateLineFill(){
     if(!lineFill || typeof firstCenter === 'undefined' || typeof lastCenter === 'undefined') return;
 
-    const viewportCenter = window.scrollY + (window.innerHeight / 2);
-    let t;
-    if(lastCenter === firstCenter) t = 1;
-    else t = Math.min(1, Math.max(0, (viewportCenter - firstCenter) / (lastCenter - firstCenter) ));
-    const targetCenter = firstCenter + t * (lastCenter - firstCenter);
-    let filledHeight = Math.max(0, targetCenter - timelineTopAbs);
+    const mobileLane = window.matchMedia('(max-width: 767px)').matches;
+    if (mobileLane) {
+      lineFill.style.setProperty('display', 'none', 'important');
+      lineFill.style.setProperty('visibility', 'hidden', 'important');
+      lineFill.style.setProperty('height', '0px', 'important');
+    } else {
+      const viewportCenter = window.scrollY + (window.innerHeight / 2);
+      let t;
+      if(lastCenter === firstCenter) t = 1;
+      else t = Math.min(1, Math.max(0, (viewportCenter - firstCenter) / (lastCenter - firstCenter) ));
+      const targetCenter = firstCenter + t * (lastCenter - firstCenter);
+      let filledHeight = Math.max(0, targetCenter - timelineTopAbs);
 
-    // fallback: if computed height is tiny or zero, set a small visible fallback so the slider does not disappear
-    if(filledHeight <= 2){
-      // choose a reasonable visible fallback relative to timeline height and number of sections
-      const fallbackPct = (sections.length > 1) ? 0.12 : 0.5;
-      filledHeight = Math.max(6, Math.round(timelineNav.clientHeight * fallbackPct));
+      // fallback: if computed height is tiny or zero, set a small visible fallback so the slider does not disappear
+      if(filledHeight <= 2){
+        // choose a reasonable visible fallback relative to timeline height and number of sections
+        const fallbackPct = (sections.length > 1) ? 0.12 : 0.5;
+        filledHeight = Math.max(6, Math.round(timelineNav.clientHeight * fallbackPct));
+      }
+
+      // set the height and keep it visible; use important to avoid host CSS overrides
+      lineFill.style.setProperty('height', filledHeight + 'px', 'important');
+      lineFill.style.setProperty('display', 'block', 'important');
+      lineFill.style.setProperty('visibility', 'visible', 'important');
+      lineFill.style.setProperty('background', 'linear-gradient(180deg, #1f7bff, #1a6bdf)', 'important');
     }
-
-    // set the height and keep it visible; use important to avoid host CSS overrides
-    lineFill.style.setProperty('height', filledHeight + 'px', 'important');
-    lineFill.style.setProperty('display', 'block', 'important');
-    lineFill.style.setProperty('visibility', 'visible', 'important');
-    lineFill.style.setProperty('background', 'linear-gradient(180deg, #1f7bff, #1a6bdf)', 'important');
 
     // activate nodes and tracks
     const idx = nearestSectionIndex();
